@@ -1,0 +1,53 @@
+{
+  "action": {
+    "action_id": "action-good-001",
+    "tool_name": "ehr.submit_order",
+    "payload": {
+      "patient_id": "p-123",
+      "ingredient": "ibuprofen",
+      "dose": "200",
+      "unit": "mg",
+      "route": "oral",
+      "frequency": "bid"
+    },
+    "collected_at": "2026-02-20T12:00:00Z"
+  },
+  "evidence_bundle": {
+    "traces": [
+      {
+        "trace_id": "trace-patient",
+        "trace_type": "read_patient",
+        "patient_id": "p-123",
+        "collected_at": "2026-02-20T11:59:30Z",
+        "payload": {
+          "patient_id": "p-123",
+          "mrn": "mrn-001"
+        }
+      },
+      {
+        "trace_id": "trace-allergies",
+        "trace_type": "read_allergies",
+        "patient_id": "p-123",
+        "collected_at": "2026-02-20T11:59:30Z",
+        "payload": {
+          "allergies": ["penicillin"]
+        }
+      },
+      {
+        "trace_id": "trace-meds",
+        "trace_type": "read_current_medications",
+        "patient_id": "p-123",
+        "collected_at": "2026-02-20T11:59:30Z",
+        "payload": {
+          "medications": ["metformin"]
+        }
+      }
+    ],
+    "hitl_approval": {
+      "approver_id": "clinician-1",
+      "signed_action_hash": "<hash-of-payload>",
+      "signed_trace_hash": "<hash-of-traces>",
+      "approval_timestamp": "2026-02-20T12:00:05Z"
+    }
+  }
+}
