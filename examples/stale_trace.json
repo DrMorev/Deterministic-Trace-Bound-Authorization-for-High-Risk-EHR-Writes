@@ -1,0 +1,47 @@
+{
+  "action": {
+    "action_id": "action-stale-001",
+    "tool_name": "ehr.submit_order",
+    "payload": {
+      "patient_id": "p-123",
+      "ingredient": "ibuprofen",
+      "dose": "200",
+      "unit": "mg",
+      "route": "oral",
+      "frequency": "bid"
+    },
+    "collected_at": "2026-02-20T12:00:00Z"
+  },
+  "evidence_bundle": {
+    "traces": [
+      {
+        "trace_id": "trace-patient",
+        "trace_type": "read_patient",
+        "patient_id": "p-123",
+        "collected_at": "2026-02-20T11:50:00Z",
+        "payload": {
+          "patient_id": "p-123"
+        }
+      },
+      {
+        "trace_id": "trace-allergies",
+        "trace_type": "read_allergies",
+        "patient_id": "p-123",
+        "collected_at": "2026-02-20T11:50:00Z",
+        "payload": {
+          "allergies": ["penicillin"]
+        }
+      },
+      {
+        "trace_id": "trace-meds",
+        "trace_type": "read_current_medications",
+        "patient_id": "p-123",
+        "collected_at": "2026-02-20T11:50:00Z",
+        "payload": {
+          "medications": []
+        }
+      }
+    ],
+    "hitl_approval": null
+  }
+}
