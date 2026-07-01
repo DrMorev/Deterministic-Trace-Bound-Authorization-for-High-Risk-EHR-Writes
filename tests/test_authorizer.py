@@ -10,10 +10,15 @@ from ref.authorizer import (
     ReasonCode,
     SessionState,
     Trace,
-    _hash_action_payload,
-    _hash_trace_set,
     authorize_submit_order,
 )
+
+
+DEFAULT_ACTION_HASH = "4e6f1ec5b7b28658d53943e5a2be7064fbe22079fc10392965d359e8892d9281"
+DEFAULT_TRACE_HASH = "6bf601a2a53f67534de2287dae442344c9dc7ce1fc926032e7ace6287f4fc848"
+IDENTITY_MISMATCH_TRACE_HASH = "918470aa3004884c9f75f5b06cd4ac6a6effda60307fa133f30e0b76c3fd8e0e"
+ALLERGY_CONFLICT_ACTION_HASH = "ec24eb81ae62c8eebed85df2986de7808c7b4b16c0aacca179f6c4b683b41fca"
+ALLERGY_CONFLICT_TRACE_HASH = "a87be0303e56880b36677924f394beaf24a16c75f376bcfa2a2edbe95a41e440"
 
 
 def ts(seconds: int = 0) -> dt:
@@ -74,11 +79,14 @@ def make_traces(
     ]
 
 
-def make_hitl(action: ProposedAction, traces) -> HITLApproval:
+def make_hitl(
+    action_hash: str = DEFAULT_ACTION_HASH,
+    trace_hash: str = DEFAULT_TRACE_HASH,
+) -> HITLApproval:
     return HITLApproval(
         approver_id="clinician-1",
-        signed_action_hash=_hash_action_payload(action.payload),
-        signed_trace_hash=_hash_trace_set(traces),
+        signed_action_hash=action_hash,
+        signed_trace_hash=trace_hash,
         approval_timestamp=ts(1),
     )
 
@@ -86,7 +94,7 @@ def make_hitl(action: ProposedAction, traces) -> HITLApproval:
 def test_allow_with_complete_fresh_evidence():
     action = make_action()
     traces = make_traces()
-    bundle = EvidenceBundle(traces=traces, hitl_approval=make_hitl(action, traces))
+    bundle = EvidenceBundle(traces=traces, hitl_approval=make_hitl())
     state = SessionState()
 
     result = authorize_submit_order(
@@ -124,10 +132,9 @@ def test_downgrade_on_stale_trace():
     action = make_action()
     old = ts(0)
     traces = make_traces(collected_at=old)
-    bundle = EvidenceBundle(traces=traces, hitl_approval=make_hitl(action, traces))
+    bundle = EvidenceBundle(traces=traces, hitl_approval=make_hitl())
     state = SessionState()
 
-    # > 300 seconds stale
     result = authorize_submit_order(
         action=action,
         bundle=bundle,
@@ -138,6 +145,24 @@ def test_downgrade_on_stale_trace():
     assert result.decision == Decision.DOWNGRADE
     assert result.reason_codes == [ReasonCode.TRACE_STALE]
     assert action.action_id in state.downgraded_action_ids
+
+
+def test_halt_on_future_dated_trace():
+    action = make_action()
+    traces = make_traces(collected_at=ts(20))
+    bundle = EvidenceBundle(traces=traces, hitl_approval=None)
+    state = SessionState()
+
+    result = authorize_submit_order(
+        action=action,
+        bundle=bundle,
+        state=state,
+        gateway_receive_time=ts(10),
+    )
+
+    assert result.decision == Decision.HALT
+    assert result.reason_codes == [ReasonCode.INTEGRITY_VIOLATION]
+    assert action.action_id not in state.downgraded_action_ids
 
 
 def test_downgrade_on_missing_hitl():
@@ -161,7 +186,7 @@ def test_downgrade_on_missing_hitl():
 def test_halt_on_identity_mismatch():
     action = make_action()
     traces = make_traces()
-    # corrupt one trace identity
+
     traces[1] = Trace(
         trace_id=traces[1].trace_id,
         trace_type=traces[1].trace_type,
@@ -169,7 +194,10 @@ def test_halt_on_identity_mismatch():
         collected_at=traces[1].collected_at,
         payload=traces[1].payload,
     )
-    bundle = EvidenceBundle(traces=traces, hitl_approval=make_hitl(action, traces))
+    bundle = EvidenceBundle(
+        traces=traces,
+        hitl_approval=make_hitl(trace_hash=IDENTITY_MISMATCH_TRACE_HASH),
+    )
     state = SessionState()
 
     result = authorize_submit_order(
@@ -186,7 +214,13 @@ def test_halt_on_identity_mismatch():
 def test_halt_on_allergy_conflict():
     action = make_action(payload={"ingredient": "penicillin"})
     traces = make_traces(allergies=["penicillin", "latex"])
-    bundle = EvidenceBundle(traces=traces, hitl_approval=make_hitl(action, traces))
+    bundle = EvidenceBundle(
+        traces=traces,
+        hitl_approval=make_hitl(
+            action_hash=ALLERGY_CONFLICT_ACTION_HASH,
+            trace_hash=ALLERGY_CONFLICT_TRACE_HASH,
+        ),
+    )
     state = SessionState()
 
     result = authorize_submit_order(
@@ -205,7 +239,6 @@ def test_halt_on_post_downgrade_bypass():
     traces = make_traces()
     state = SessionState()
 
-    # first attempt: missing HITL => DOWNGRADE and lock action_id
     first = authorize_submit_order(
         action=action,
         bundle=EvidenceBundle(traces=traces, hitl_approval=None),
@@ -215,10 +248,9 @@ def test_halt_on_post_downgrade_bypass():
     assert first.decision == Decision.DOWNGRADE
     assert action.action_id in state.downgraded_action_ids
 
-    # second attempt with same action_id, even with fixed evidence => HALT
     second = authorize_submit_order(
         action=action,
-        bundle=EvidenceBundle(traces=traces, hitl_approval=make_hitl(action, traces)),
+        bundle=EvidenceBundle(traces=traces, hitl_approval=make_hitl()),
         state=state,
         gateway_receive_time=ts(20),
     )
@@ -231,7 +263,6 @@ def test_halt_on_retry_ceiling_exceeded():
     traces = make_traces()
     state = SessionState()
 
-    # first attempt consumes the single allowed attempt and downgrades
     first = authorize_submit_order(
         action=action,
         bundle=EvidenceBundle(traces=traces, hitl_approval=None),
@@ -240,12 +271,10 @@ def test_halt_on_retry_ceiling_exceeded():
     )
     assert first.decision == Decision.DOWNGRADE
 
-    # use a new action_id state would avoid this; same action_id should now halt
-    # because action_attempts > MAX_SUBMIT_ATTEMPTS_PER_ACTION
     state = SessionState(downgraded_action_ids=set(), action_attempts={"retry-action": 1})
     second = authorize_submit_order(
         action=action,
-        bundle=EvidenceBundle(traces=traces, hitl_approval=make_hitl(action, traces)),
+        bundle=EvidenceBundle(traces=traces, hitl_approval=make_hitl()),
         state=state,
         gateway_receive_time=ts(20),
     )
@@ -253,7 +282,7 @@ def test_halt_on_retry_ceiling_exceeded():
     assert second.reason_codes == [ReasonCode.RETRY_CEILING_EXCEEDED]
 
 
-def test_halt_on_invalid_hitl_binding():
+def test_downgrade_on_invalid_hitl_binding():
     action = make_action()
     traces = make_traces()
     bad_hitl = HITLApproval(
@@ -272,7 +301,6 @@ def test_halt_on_invalid_hitl_binding():
         gateway_receive_time=ts(10),
     )
 
-    # current authorizer maps HITL_INVALID into DOWNGRADE path
     assert result.decision == Decision.DOWNGRADE
     assert result.reason_codes == [ReasonCode.HITL_INVALID]
     assert action.action_id in state.downgraded_action_ids
