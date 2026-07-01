@@ -25,6 +25,7 @@ class ReasonCode(str, Enum):
     IDENTITY_CONFLICT = "IDENTITY_CONFLICT"
     ALLERGY_CONFLICT = "ALLERGY_CONFLICT"
     SCHEMA_INVALID = "SCHEMA_INVALID"
+    INTEGRITY_VIOLATION = "INTEGRITY_VIOLATION"
     POST_DOWNGRADE_BYPASS = "POST_DOWNGRADE_BYPASS"
     RETRY_CEILING_EXCEEDED = "RETRY_CEILING_EXCEEDED"
 
@@ -151,6 +152,9 @@ def _check_required_traces(bundle: EvidenceBundle) -> Optional[ReasonCode]:
 
 def _check_freshness(bundle: EvidenceBundle, gateway_receive_time: datetime) -> Optional[ReasonCode]:
     for trace in bundle.traces:
+        if trace.collected_at > gateway_receive_time:
+            return ReasonCode.INTEGRITY_VIOLATION
+
         age = gateway_receive_time - trace.collected_at
         if age > timedelta(seconds=TTL_SECONDS):
             return ReasonCode.TRACE_STALE
@@ -241,8 +245,14 @@ def authorize_submit_order(
             reason_codes=[trace_error],
         )
 
-    freshness_error = _check_freshness(bundle, gateway_receive_time)
+        freshness_error = _check_freshness(bundle, gateway_receive_time)
     if freshness_error is not None:
+        if freshness_error == ReasonCode.INTEGRITY_VIOLATION:
+            return AuthorizationResult(
+                decision=Decision.HALT,
+                reason_codes=[freshness_error],
+            )
+
         _record_downgrade(state, action.action_id)
         return AuthorizationResult(
             decision=Decision.DOWNGRADE,
