@@ -99,6 +99,11 @@ If any required trace exceeds the allowed TTL window:
 
 Decision = DOWNGRADE
 
+If any trace is future-dated relative to gateway receive time:
+
+Decision = HALT
+Reason = INTEGRITY_VIOLATION
+
 ---
 
 # 7. Cross-Trace Invariants
@@ -112,7 +117,7 @@ trace.patient_id equality across traces
 If identity mismatch occurs:
 
 Decision = HALT
-Reason = INTEGRITY_VIOLATION
+Reason = IDENTITY_CONFLICT
 
 Additional domain invariants may be applied (e.g., allergy conflicts).
 
@@ -140,7 +145,7 @@ All required traces must be present.
 Missing traces result in:
 
 Decision = DOWNGRADE
-Reason = INCOMPLETE_CONTEXT
+Reason = TRACE_MISSING
 
 The system must not attempt to infer missing evidence.
 
@@ -210,7 +215,7 @@ The broader gate model includes five authorization stages:
 - Gate 3 — Execution Graph Governance *(planned)*  
 - Gate 4 — Zero-Trust Inter-Agent *(planned)*  
 
-Version v0.2 implements **Gates 0–2**.
+Version v0.2 remains a narrow deterministic reference artifact for `ehr.submit_order`; the gate labels are architectural context, not additional current-scope modules.
 
 Autonomy Levels (A0–A4): agent autonomy graduation determining available tier ceiling — planned.
 

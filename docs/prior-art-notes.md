@@ -1,4 +1,4 @@
-Prior Art Notes
+# Prior Art Notes
 
 Project: EBAC-T4
 Scope: Deterministic trace-bound authorization for a single high-risk EHR state-changing action (ehr.submit_order)

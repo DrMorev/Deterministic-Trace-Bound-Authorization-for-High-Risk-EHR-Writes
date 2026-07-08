@@ -45,8 +45,8 @@
     ],
     "hitl_approval": {
       "approver_id": "clinician-1",
-      "signed_action_hash": "<hash-of-payload>",
-      "signed_trace_hash": "<hash-of-traces>",
+      "signed_action_hash": "4e6f1ec5b7b28658d53943e5a2be7064fbe22079fc10392965d359e8892d9281",
+      "signed_trace_hash": "e27df12c32a2b2db3e9e378f269097fb5a5ffec846f028da4a3647585fc5982b",
       "approval_timestamp": "2026-02-20T12:00:05Z"
     }
   }

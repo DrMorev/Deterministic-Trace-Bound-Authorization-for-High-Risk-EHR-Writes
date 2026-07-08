@@ -57,6 +57,9 @@ ebac-t4/
 │   └── authorizer.py
 ├── tests/
 │   └── test_authorizer.py
+├── .github/
+│   └── workflows/
+│       └── tests.yml
 ├── docs/
 │   ├── claim-chart-v0.3.md
 │   ├── prior-art-notes.md
@@ -67,11 +70,12 @@ ebac-t4/
 │   ├── stale_trace.json
 │   ├── missing_hitl.json
 │   └── identity_mismatch.json
+```
 
 
 ⸻
 
-Decision Model
+## Decision Model
 
 The authorization gate returns one of three deterministic outcomes:
 
@@ -86,7 +90,7 @@ Note: downgrade invalidates the execution lineage for the attempted action.
 
 ⸻
 
-Minimal Evidence Contract
+## Minimal Evidence Contract
 
 For ehr.submit_order, the following traces are required:
 	•	read_patient
@@ -102,25 +106,26 @@ Natural-language explanations from the agent are ignored.
 
 ⸻
 
-Reference Implementation
+## Reference Implementation
 
 ref/authorizer.py implements a deterministic state machine with the following checks:
 	1.	post-downgrade lock
 	2.	retry ceiling
-	3.	schema validation
-	4.	identity invariants
+	3.	tool name validation
+	4.	payload schema validation
 	5.	trace completeness
 	6.	trace freshness
-	7.	HITL binding
-	8.	allergy conflict detection
+	7.	identity invariants
+	8.	HITL binding
+	9.	allergy conflict detection
 
 The implementation is intentionally narrow and designed to demonstrate the authorization semantics defined in the specification.
 
 ⸻
 
-Running the Tests
+## Running the Tests
 
-pytest tests/
+python -m pytest tests/ -v
 
 All tests should pass.
 
@@ -133,7 +138,7 @@ The test suite includes scenarios such as:
 
 ⸻
 
-Full Pipeline Architecture (roadmap)
+## Roadmap Lineage (not current v0.2 scope)
 
 The broader gate model includes five authorization stages:
 	•	Gate 0: Tier Sanity
@@ -142,13 +147,13 @@ The broader gate model includes five authorization stages:
 	•	Gate 3: Execution Graph Governance (planned)
 	•	Gate 4: Zero-Trust Inter-Agent (planned)
 
-v0.2 implements Gates 0–2 for a single high-risk medical action.
+In this repository, v0.2 remains a narrow deterministic reference artifact for `ehr.submit_order`. The gate labels are roadmap lineage, not additional current-scope architecture.
 
 Autonomy Levels (A0–A4): agent autonomy graduation determining available tier ceiling — planned.
 
 ⸻
 
-Non-Goals
+## Non-Goals
 
 This project does not:
 	•	replace RBAC
@@ -161,7 +166,7 @@ The goal is a deterministic authorization artifact for high-risk state changes.
 
 ⸻
 
-Prior Art and Positioning
+## Prior Art and Positioning
 
 See:
 	•	docs/prior-art-notes.md
@@ -178,7 +183,7 @@ The repository intentionally documents overlap and limits of novelty.
 
 ⸻
 
-Current Status
+## Current Status
 
 Mini-Spec: v0.2 (frozen)
 Reference implementation: complete
@@ -190,7 +195,7 @@ Next steps:
 
 ⸻
 
-License
+## License
 
 MIT
 
