@@ -245,7 +245,7 @@ def authorize_submit_order(
             reason_codes=[trace_error],
         )
 
-        freshness_error = _check_freshness(bundle, gateway_receive_time)
+    freshness_error = _check_freshness(bundle, gateway_receive_time)
     if freshness_error is not None:
         if freshness_error == ReasonCode.INTEGRITY_VIOLATION:
             return AuthorizationResult(
