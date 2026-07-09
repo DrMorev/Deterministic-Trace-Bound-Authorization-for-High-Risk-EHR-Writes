@@ -97,10 +97,11 @@ Test result:
 git status --short after commit/push:
 Scope check:
 Notes:
+```
 
 A claim of “done” without a commit hash, changed-file list, and test result is not sufficient.
 
-Scope Check
+## Scope Check
 
 Every change must answer:
 
@@ -112,7 +113,7 @@ Every change must answer:
 
 If the answer indicates scope expansion, stop and ask for explicit PI approval.
 
-Safe Changes
+## Safe Changes
 
 Usually safe:
 
@@ -134,15 +135,15 @@ Not safe without explicit approval:
 * production-security claims
 * broad agent-governance claims
 
-Canonical Project Sentence
+## Canonical Project Sentence
 
 EBAC-T4 is a narrow deterministic state machine for deciding whether a high-risk EHR write may execute, based on a complete and fresh evidence cycle.
 
-Canonical Boundary Sentence
+## Canonical Boundary Sentence
 
 EBAC-T4 assumes a gateway-mediated execution boundary. Without that boundary, the mechanism degrades into advisory middleware.
 
-Agent Instruction
+## Agent Instruction
 
 When in doubt, narrow the change.
 
