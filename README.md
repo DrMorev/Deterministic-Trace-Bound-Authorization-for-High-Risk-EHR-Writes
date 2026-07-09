@@ -3,7 +3,7 @@
 > Scope: Deterministic trace-bound authorization for one high-risk EHR write: ehr.submit_order
 > Production status: Not production software; no clinical validation, real EHR integration, or production security guarantees
 > Tests: Pytest suite passing; GitHub Actions enabled
-> Citation: DOI-backed archival snapshot planned via Zenodo release
+> Citation: Archived on Zenodo as a citable software artifact: DOI 10.5281/zenodo.21281597
 
 **Deterministic Trace-Bound Authorization for High-Risk EHR Writes**
 
