@@ -1,4 +1,10 @@
 # EBAC-T4
+> Status: Stable v0.2.x reference artifact
+> Scope: Deterministic trace-bound authorization for one high-risk EHR write: ehr.submit_order
+> Production status: Not production software; no clinical validation, real EHR integration, or production security guarantees
+> Tests: Pytest suite passing; GitHub Actions enabled
+> Citation: DOI-backed archival snapshot planned via Zenodo release
+
 **Deterministic Trace-Bound Authorization for High-Risk EHR Writes**
 
 Reference implementation and specification of a deterministic authorization gate for high-risk EHR state-changing actions.
